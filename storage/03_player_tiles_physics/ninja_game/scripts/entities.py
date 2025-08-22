@@ -22,6 +22,7 @@ class PhysicsEntity:
         for rect in tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
                 if frame_movement[0] > 0:
+
                     entity_rect.right = rect.left
                     self.collisions['right'] = True
                 if frame_movement[0] < 0:
