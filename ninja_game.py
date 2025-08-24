@@ -3,18 +3,20 @@ import pygame
 from scripts.entities import PhysicsEntity
 from scripts.utils import load_image, load_images
 from scripts.tilemap import TileMap
+from scripts.clouds import Clouds
 
 class Game:
     def __init__(self):
         pygame.init()
 
         pygame.display.set_caption('ninja game')
+        #game screen
         self.screen = pygame.display.set_mode((640, 480))
         #render screen .5 screen
         self.display = pygame.Surface((320,240))
-        
+        #
         self.clock = pygame.time.Clock()
-        
+        #movement x y
         self.movement = [False, False]
 
         self.assets = {
@@ -23,25 +25,31 @@ class Game:
                 'grass' : load_images('tiles/grass'),
                 'large_decor' : load_images('tiles/large_decor'),
                 'stone' : load_images('tiles/stone'),
-                'player' : load_image('entities/player.png')
+                'player' : load_image('entities/player.png'),
+                'background' : load_image('background.png'),
+                'clouds': load_images('clouds'),
                 }
+
+        self.clouds = Clouds(self.assets['clouds'], count=16)
         #from scripts/entities.py
         self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
 
         #pass in assets to TileMap
         self.tilemap = TileMap(self, tile_size=16)
-
+        #camera scroll
         self.scroll = [0, 0]
 
     def run(self):
         while True:
-            self.display.fill((14, 219, 248))
+            self.display.blit(self.assets['background'], (0, 0))
             #scroll
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
             #convert to int to avoid jitters
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
             #player entity calls
+            self.clouds.update()
+            self.clouds.render(self.display, offset=render_scroll)
             self.tilemap.render(self.display, offset=render_scroll)
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             self.player.render(self.display, offset=render_scroll)
