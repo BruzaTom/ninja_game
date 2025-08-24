@@ -35,6 +35,7 @@ class PhysicsEntity:
                 self.pos[0] = entity_rect.x
         #check rects around player y pos for collisions
         self.pos[1] += frame_movement[1]
+        #new entity_rect or else dosent work
         entity_rect = self.rect()
         for rect in tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
@@ -52,6 +53,6 @@ class PhysicsEntity:
         if self.collisions['down'] or self.collisions['up']:
             self.velocity[1] = 0
 
-    def render(self, surface):
-        surface.blit(self.game.assets['player'], self.pos)
+    def render(self, surface, offset=(0, 0)):
+        surface.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
