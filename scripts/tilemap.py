@@ -41,17 +41,29 @@ class TileMap:
 
     def render(self, surface, offset=(0, 0)):
         #
-        pos_tup = ()
+        #tilemap blits
         for tile in self.offgrid_tiles:
-            #acces to x and y offset
-            #tilemap blits
-            surface.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] - offset[0], tile['pos'][1] - offset[1]))
-
-        for loc in self.tilemap:
-            tile = self.tilemap[loc]
             tile_type = tile['type']
             tile_variant = tile['variant']
             tile_pos = tile['pos']
-            surface.blit(self.game.assets[tile_type][tile_variant], (tile_pos[0] * self.tile_size - offset[0], tile_pos[1] * self.tile_size - offset[1]))
+            surface.blit(self.game.assets[tile_type][tile_variant], (tile_pos[0] - offset[0], tile_pos[1] - offset[1]))
+
+        for x in range(offset[0] // self.tile_size, (offset[0] + surface.get_width())  // self.tile_size + 1):
+            for y in range(offset[1] // self.tile_size, (offset[1] + surface.get_height())  // self.tile_size + 1):
+                loc = str(x) + ';' + str(y)
+                if loc in self.tilemap:
+                    tile = self.tilemap[loc]
+                    tile_type = tile['type']
+                    tile_variant = tile['variant']
+                    tile_pos = tile['pos']
+                    surface.blit(self.game.assets[tile_type][tile_variant], (tile_pos[0] * self.tile_size - offset[0], tile_pos[1] * self.tile_size - offset[1]))
+            
+
+        #for loc in self.tilemap:
+            #tile = self.tilemap[loc]
+            #tile_type = tile['type']
+            #tile_variant = tile['variant']
+            #tile_pos = tile['pos']
+            #surface.blit(self.game.assets[tile_type][tile_variant], (tile_pos[0] * self.tile_size - offset[0], tile_pos[1] * self.tile_size - offset[1]))
 
 

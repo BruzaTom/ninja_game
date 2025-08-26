@@ -1,7 +1,7 @@
 import sys
 import pygame
-from scripts.entities import PhysicsEntity
-from scripts.utils import load_image, load_images
+from scripts.entities import PhysicsEntity, Player
+from scripts.utils import load_image, load_images, Animation
 from scripts.tilemap import TileMap
 from scripts.clouds import Clouds
 
@@ -12,8 +12,8 @@ class Game:
         pygame.display.set_caption('ninja game')
         #game screen
         self.screen = pygame.display.set_mode((640, 480))
-        #render screen .5 screen
-        self.display = pygame.Surface((320,240))
+        #render size 'zoom'
+        self.display = pygame.Surface((160,120))
         #
         self.clock = pygame.time.Clock()
         #movement x y
@@ -28,11 +28,17 @@ class Game:
                 'player' : load_image('entities/player.png'),
                 'background' : load_image('background.png'),
                 'clouds': load_images('clouds'),
+                'player/idle': Animation(load_images('entities/player/idle'), img_dur=6),
+                'player/run': Animation(load_images('entities/player/run'), img_dur=4),
+                'player/jump': Animation(load_images('entities/player/jump'), img_dur=4),
+                'player/slide': Animation(load_images('entities/player/slide'), img_dur=4),
+                'player/wall_slide': Animation(load_images('entities/player/wall_slide'), img_dur=4),
                 }
+        #print(self.assets)
 
         self.clouds = Clouds(self.assets['clouds'], count=16)
         #from scripts/entities.py
-        self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
+        self.player = Player(self, (50, 50), (8, 15))
 
         #pass in assets to TileMap
         self.tilemap = TileMap(self, tile_size=16)
