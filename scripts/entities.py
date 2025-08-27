@@ -73,7 +73,11 @@ class PhysicsEntity:
         self.animation.update()
 
     def render(self, surface, offset=(0, 0)):
-        surface.blit(pygame.transform.flip(self.animation.img(), self.flip, False), (self.pos[0] - offset[0] + self.ani_offset[0], self.pos[1] - offset[1] + self.ani_offset[1]))
+        flip_flagged_img = pygame.transform.flip(self.animation.img(), self.flip, False)
+        pos_offset_p_ani_x = self.pos[0] - offset[0] + self.ani_offset[0] 
+        pos_offset_p_ani_y = self.pos[1] - offset[1] + self.ani_offset[1] 
+        ani_pos_os = (pos_offset_p_ani_x, pos_offset_p_ani_y) 
+        surface.blit(flip_flagged_img, ani_pos_os)
        
        #before animations
         #surface.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
