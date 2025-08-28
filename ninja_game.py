@@ -13,7 +13,7 @@ class Game:
         #game screen
         self.screen = pygame.display.set_mode((640, 480))
         #render size 'zoom'
-        self.display = pygame.Surface((160,120))
+        self.display = pygame.Surface((320, 240))
         #
         self.clock = pygame.time.Clock()
         #movement x y
@@ -42,6 +42,7 @@ class Game:
 
         #pass in assets to TileMap
         self.tilemap = TileMap(self, tile_size=16)
+        self.tilemap.load('map.json')
         #camera scroll
         self.scroll = [0, 0]
 
