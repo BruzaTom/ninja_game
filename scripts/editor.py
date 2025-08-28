@@ -151,6 +151,8 @@ class Editor:
                         self.tilemap.save('map.json')
                     if event.key == pygame.K_LSHIFT:#shift
                         self.shift = True
+                    if event.key == pygame.K_t:#auto tile
+                        self.tilemap.autotile()
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_a:
                         self.movement[0] = False
