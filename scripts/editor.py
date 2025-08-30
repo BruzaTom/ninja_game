@@ -26,7 +26,7 @@ class Editor:
                 'stone' : load_images('tiles/stone'),
                 }
         
-        #movement x y
+        #movement left, right, up, down
         self.movement = [False, False, False, False]
         #tilemap
         self.tilemap = TileMap(self, tile_size=16)
