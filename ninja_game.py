@@ -15,7 +15,7 @@ class Game:
         pygame.display.set_caption('ninja game')
         #game screen
         self.screen = pygame.display.set_mode((640, 480))
-        #render size 'zoom'
+        #render size 'zoom' / 'camera'
         self.display = pygame.Surface((320, 240))
         #
         self.clock = pygame.time.Clock()
@@ -37,6 +37,7 @@ class Game:
                 'player/slide': Animation(load_images('entities/player/slide'), img_dur=4),
                 'player/wall_slide': Animation(load_images('entities/player/wall_slide'), img_dur=4),
                 'particle/leaf': Animation(load_images('particles/leaf'), img_dur=20, loop=False),
+                'particle/particle': Animation(load_images('particles/particle'), img_dur=6, loop=False),
                 }
         #print(self.assets)
 
@@ -55,7 +56,7 @@ class Game:
 
         self.particles = []
 
-        #camera scroll
+        #'camera' scroll
         self.scroll = [0, 0]
 
     def run(self):
@@ -68,13 +69,14 @@ class Game:
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
             #spawn particals
             for rect in self.leaf_spawners:
+                #49999 makes the particals pass condition less often
                 if random.random() * 49999 < rect.width * rect.height:
                     pos_x = rect.x + random.random() * rect.width
                     pos_y = rect.y + random.random() * rect.height
                     pos = (pos_x, pos_y)
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            #player entity calls
+            #render calls
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)
             self.tilemap.render(self.display, offset=render_scroll)
@@ -104,6 +106,8 @@ class Game:
                         self.movement[1] = True
                     if event.key == pygame.K_UP:
                         self.player.jump()
+                    if event.key == pygame.K_x:
+                        self.player.dash()
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False
