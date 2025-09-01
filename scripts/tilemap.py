@@ -101,6 +101,13 @@ class TileMap:
         json.dump({'tilemap': self.tilemap, 'tile_size': self.tile_size, 'offgrid': self.offgrid_tiles}, f)
         f.close()
 
+    def solid_check(self, pos):
+        #convert pixel pos to coridnates of the grid system
+        tile_loc = str(int(pos[0] // self.tile_size)) + ';' + str(int(pos[1] // self.tile_size))
+        if tile_loc in self.tilemap:#check if tile exits
+            if self.tilemap[tile_loc]['type'] in PHYSICS_TILES:#check if physics tile
+                return self.tilemap[tile_loc]
+
     def physics_rects_around(self, pos):
         rects = []
         for tile in self.tiles_around(pos):

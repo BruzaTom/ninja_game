@@ -86,6 +86,32 @@ class PhysicsEntity:
        #before animations
         #surface.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
+class Enemy(PhysicsEntity):
+    def __init__(self, game, pos, size):
+        super().__init__(game, 'enemy', pos, size)
+        self.walking = 0
+
+    def update(self, tilemap, movement=(0, 0)):
+        if self.walking:
+            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
+                if self.collisions['right'] or self.collisions['left']:
+                    self.flip = not self.flip
+                else:
+                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+            else:
+                self.flip = not self.flip
+            self.walking = max(0, self.walking -1)
+        elif random.random() < 0.01:#ocasionally walk for 30 to 120 secs
+            self.walking = random.randint(30, 120)
+
+        super().update(tilemap, movement=movement)
+
+        if movement[0] != 0:
+            self.set_action('run')
+        else:
+            self.set_action('idle')
+
+
 class Player(PhysicsEntity):
     def __init__(self, game, pos, size):
         super().__init__(game, 'player', pos, size)
@@ -133,7 +159,7 @@ class Player(PhysicsEntity):
                 #burst of particles
                 angle = random.random() * math.pi * 2#correct way to set an angle
                 speed = random.random() * 0.5 + 0.5#generate a speed from 0.5 to 1
-                p_velocity = [math.cos(angle) * speed, math.sin(angle) * speed]#trig formula for particle velocity(used alot in games)
+                p_velocity = [math.cos(angle) * speed, math.sin(angle) * speed]#trig formula for particle velocity (used alot in games)
                 self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7)))
         if self.dashing > 0:
             self.dashing = max(0, self.dashing - 1)

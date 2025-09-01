@@ -2,7 +2,7 @@ import sys
 import random#partickles
 import math#particles
 import pygame
-from scripts.entities import PhysicsEntity, Player
+from scripts.entities import PhysicsEntity, Player, Enemy
 from scripts.utils import load_image, load_images, Animation
 from scripts.tilemap import TileMap
 from scripts.clouds import Clouds
@@ -31,6 +31,8 @@ class Game:
                 'player' : load_image('entities/player.png'),
                 'background' : load_image('background.png'),
                 'clouds': load_images('clouds'),
+                'enemy/idle': Animation(load_images('entities/enemy/idle'), img_dur=6),
+                'enemy/run': Animation(load_images('entities/enemy/run'), img_dur=4),
                 'player/idle': Animation(load_images('entities/player/idle'), img_dur=6),
                 'player/run': Animation(load_images('entities/player/run'), img_dur=4),
                 'player/jump': Animation(load_images('entities/player/jump'), img_dur=4),
@@ -53,6 +55,14 @@ class Game:
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
+
+        #spawner
+        self.enemies = []
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
+            if spawner['variant'] == 0:
+                self.player.pos = spawner['pos']
+            else:
+                self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
 
         self.particles = []
 
@@ -82,6 +92,11 @@ class Game:
             self.tilemap.render(self.display, offset=render_scroll)
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             self.player.render(self.display, offset=render_scroll)
+            
+            #enemy calls
+            for enemy in self.enemies.copy():
+                enemy.update(self.tilemap, (0, 0))
+                enemy.render(self.display, offset=render_scroll)
             
             #manage particles
             for particle in self.particles.copy():
