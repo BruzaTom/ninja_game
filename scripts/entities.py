@@ -1,4 +1,5 @@
-import pygame
+import pygame, math, random
+from scripts.particle import Particle
 
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
@@ -125,8 +126,15 @@ class Player(PhysicsEntity):
                 self.set_action('run')
             else:
                 self.set_action('idle')
-        
+
         #dashing
+        if abs(self.dashing) in {60, 50}:#burst at beginning and end
+            for i in range(20):
+                #burst of particles
+                angle = random.random() * math.pi * 2#correct way to set an angle
+                speed = random.random() * 0.5 + 0.5#generate a speed from 0.5 to 1
+                p_velocity = [math.cos(angle) * speed, math.sin(angle) * speed]#trig formula for particle velocity(used alot in games)
+                self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7)))
         if self.dashing > 0:
             self.dashing = max(0, self.dashing - 1)
         if self.dashing < 0:
@@ -137,12 +145,21 @@ class Player(PhysicsEntity):
             #cause sudden stop to dash
             if abs(self.dashing) == 51:#reason for 50 is to act as cool down
                 self.velocity[0] *= 0.1
+            #trailing particles
+            p_velocity = [abs(self.dashing) / self.dashing * random.random() * 3, 0]
+            self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7)))
 
-        #
+        #normalize towards zero from wall jump
         if self.velocity[0] > 0:
             self.velocity[0] = max(self.velocity[0] - 0.1, 0)
         else:
             self.velocity[0] = min(self.velocity[0] + 0.1, 0)
+
+    def render(self, surface, offset=(0, 0)):
+        #if player is not dashing just call inherited render 
+        if abs(self.dashing) <= 50:
+            super().render(surface, offset=offset)
+
 
     def jump(self):
         if self.wall_slide:

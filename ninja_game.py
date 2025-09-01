@@ -93,29 +93,47 @@ class Game:
                 if kill:
                     self.particles.remove(particle)
                 
-            #print(self.tilemap.physics_rects_around(self.player.pos))
             #input
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.movement[0] = True
-                    if event.key == pygame.K_RIGHT:
-                        self.movement[1] = True
-                    if event.key == pygame.K_UP:
-                        self.player.jump()
-                    if event.key == pygame.K_x:
-                        self.player.dash()
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_LEFT:
-                        self.movement[0] = False
-                    if event.key == pygame.K_RIGHT:
-                        self.movement[1] = False
+            self.keyboard_input()
+                
             #finishers
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
             self.clock.tick(60)
 
+    def keyboard_input(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.movement[0] = True
+                if event.key == pygame.K_RIGHT:
+                    self.movement[1] = True
+                if event.key == pygame.K_UP:
+                    self.player.jump()
+                if event.key == pygame.K_x:
+                    self.player.dash()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
+                    self.movement[0] = False
+                if event.key == pygame.K_RIGHT:
+                    self.movement[1] = False
+
 Game().run()
+
+
+
+def controller_input():
+    #d-pad
+    if event.type == pygame.JOYHATMOTION:
+        hat_x, hat_y = event.value                    
+        self.movement[0] = hat_x == -1  # Left → True if pressed
+        self.movement[1] = hat_x == 1   # Right → True if pressed
+    #buttons
+    if event.type == pygame.JOYBUTTONDOWN:
+        if event.button == 0:# A button
+            self.player.jump()
+        if event.button == 2:# X button
+            self.player.dash()
