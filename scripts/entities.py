@@ -93,14 +93,27 @@ class Enemy(PhysicsEntity):
 
     def update(self, tilemap, movement=(0, 0)):
         if self.walking:
-            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                if self.collisions['right'] or self.collisions['left']:
+            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):#check solid ground
+                if self.collisions['right'] or self.collisions['left']:#if run intowall flip
                     self.flip = not self.flip
                 else:
-                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])#update x movement
             else:
                 self.flip = not self.flip
-            self.walking = max(0, self.walking -1)
+            self.walking = max(0, self.walking -1)#decrement walking
+            if not self.walking:#shoot
+                dis_x = self.game.player.pos[0] - self.pos[0] 
+                dis_y = self.game.player.pos[1] - self.pos[1] 
+                distance = (dis_x, dis_y)
+                if (abs(dis_y) < 16):
+                    if (self.flip and dis_x < 0):#looking left and player is to the left
+                        projectile_pos = [self.rect().centerx - 7, self.rect().centery]
+                        self.game.projectiles.append([projectile_pos, -1.5, 0])
+                    if (not self.flip and dis_x > 0):#looking right and player is to the right
+                        projectile_pos = [self.rect().centerx + 7, self.rect().centery]
+                        self.game.projectiles.append([projectile_pos, 1.5, 0])
+
+
         elif random.random() < 0.01:#ocasionally walk for 30 to 120 secs
             self.walking = random.randint(30, 120)
 
@@ -110,6 +123,22 @@ class Enemy(PhysicsEntity):
             self.set_action('run')
         else:
             self.set_action('idle')
+
+    def render(self, surface, offset=(0, 0)):
+        super().render(surface, offset=offset)
+        
+        #enemy gun blit
+        if self.flip:
+            flipped_gun = pygame.transform.flip(self.game.assets['gun'], True, False).convert_alpha()
+            gun_pos_x = self.rect().centerx - 4 - self.game.assets['gun'].get_width() - offset[0] 
+            gun_pos_y = self.rect().centery - offset[1]
+            gun_pos = (gun_pos_x, gun_pos_y)
+            surface.blit(flipped_gun, gun_pos)
+        else:
+            gun_pos_x = self.rect().centerx + 4 - offset[0] 
+            gun_pos_y = self.rect().centery - offset[1]
+            gun_pos = (gun_pos_x, gun_pos_y)
+            surface.blit(self.game.assets['gun'], gun_pos)
 
 
 class Player(PhysicsEntity):
@@ -160,7 +189,8 @@ class Player(PhysicsEntity):
                 angle = random.random() * math.pi * 2#correct way to set an angle
                 speed = random.random() * 0.5 + 0.5#generate a speed from 0.5 to 1
                 p_velocity = [math.cos(angle) * speed, math.sin(angle) * speed]#trig formula for particle velocity (used alot in games)
-                self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7)))
+                new_particle = Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7))
+                self.game.particles.append(new_particle)
         if self.dashing > 0:
             self.dashing = max(0, self.dashing - 1)
         if self.dashing < 0:
@@ -173,7 +203,8 @@ class Player(PhysicsEntity):
                 self.velocity[0] *= 0.1
             #trailing particles
             p_velocity = [abs(self.dashing) / self.dashing * random.random() * 3, 0]
-            self.game.particles.append(Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7)))
+            new_particle = Particle(self.game, 'particle', self.rect().center, velocity=p_velocity, frame=random.randint(0, 7))
+            self.game.particles.append(new_particle)
 
         #normalize towards zero from wall jump
         if self.velocity[0] > 0:

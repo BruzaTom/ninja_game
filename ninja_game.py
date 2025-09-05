@@ -40,6 +40,8 @@ class Game:
                 'player/wall_slide': Animation(load_images('entities/player/wall_slide'), img_dur=4),
                 'particle/leaf': Animation(load_images('particles/leaf'), img_dur=20, loop=False),
                 'particle/particle': Animation(load_images('particles/particle'), img_dur=6, loop=False),
+                'gun': load_image('gun.png'),
+                'projectile': load_image('projectile.png'),
                 }
         #print(self.assets)
 
@@ -64,6 +66,7 @@ class Game:
             else:
                 self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
 
+        self.projectiles = []
         self.particles = []
 
         #'camera' scroll
@@ -86,18 +89,37 @@ class Game:
                     pos = (pos_x, pos_y)
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            #render calls
+            #clouds behind tilemap
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)
             self.tilemap.render(self.display, offset=render_scroll)
-            self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
-            self.player.render(self.display, offset=render_scroll)
-            
+
             #enemy calls
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
-            
+
+            #render calls
+            self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
+            self.player.render(self.display, offset=render_scroll)
+
+            #enemy projectiles
+            for projectile in self.projectiles.copy():
+                projectile[0][0] += projectile[1]#[[x, y], direction, timer]
+                projectile[2] += 1
+                img = self.assets['projectile']
+                pos_x = projectile[0][0] - img.get_width() / 2 - render_scroll[0]
+                pos_y = projectile[0][1] - img.get_height() / 2 - render_scroll[1]
+                self.display.blit(img, (pos_x, pos_y))
+                if self.tilemap.solid_check(projectile[0]):
+                    self.projectiles.remove(projectile)
+                elif projectile[2] > 360:
+                    self.projectiles.remove(projectile)
+                elif abs(self.player.dashing) < 50:
+                    if self.player.rect().collidepoint(projectile[0]):
+                        self.projectiles.remove(projectile)
+
+
             #manage particles
             for particle in self.particles.copy():
                 kill = particle.update()
