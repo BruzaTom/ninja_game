@@ -53,12 +53,12 @@ class Game:
         self.tilemap = TileMap(self, tile_size=16)
         self.tilemap.load('map.json')
         
-        #particles
+        #leaf spawners are trees ('large_decor', 2)
         self.leaf_spawners = []
         for tree in self.tilemap.extract([('large_decor', 2)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + tree['pos'][0], 4 + tree['pos'][1], 23, 13))
 
-        #spawner
+        #physics entities spawners
         self.enemies = []
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
@@ -74,13 +74,7 @@ class Game:
 
     def run(self):
         while True:
-            self.display.blit(self.assets['background'], (0, 0))
-            #scroll
-            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
-            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
-            #convert to int to avoid jitters
-            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
-            #spawn particals
+            #leaf particle logic
             for rect in self.leaf_spawners:
                 #49999 makes the particals pass condition less often
                 if random.random() * 49999 < rect.width * rect.height:
@@ -88,6 +82,44 @@ class Game:
                     pos_y = rect.y + random.random() * rect.height
                     pos = (pos_x, pos_y)
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
+            def manage_leaf_particles():
+                for particle in self.particles.copy():
+                    kill = particle.update()
+                    particle.render(self.display, offset=render_scroll)
+                    if particle.p_type == 'leaf':
+                        #apply sin effect to position               0.035 slows down effect
+                        particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
+                    if kill:
+                        self.particles.remove(particle)
+
+            #enemy projectile logic
+            def manage_enemy_projectiles():
+                for projectile in self.projectiles.copy():
+                    projectile[0][0] += projectile[1]#[[x, y], direction, timer]
+                    projectile[2] += 1
+                    img = self.assets['projectile']
+                    pos_x = projectile[0][0] - img.get_width() / 2 - render_scroll[0]
+                    pos_y = projectile[0][1] - img.get_height() / 2 - render_scroll[1]
+                    self.display.blit(img, (pos_x, pos_y))
+                    if self.tilemap.solid_check(projectile[0]):
+                        self.projectiles.remove(projectile)
+                    elif projectile[2] > 360:
+                        self.projectiles.remove(projectile)
+                    elif abs(self.player.dashing) < 50:
+                        if self.player.rect().collidepoint(projectile[0]):
+                            self.projectiles.remove(projectile)
+ 
+            #render scroll logic
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
+            #convert to int to avoid jitters
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+
+            #################logic######################
+            #################render######################
+            
+            #backgrond img
+            self.display.blit(self.assets['background'], (0, 0))
 
             #clouds behind tilemap
             self.clouds.update()
@@ -99,36 +131,15 @@ class Game:
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
 
-            #render calls
+            #player calls
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
             self.player.render(self.display, offset=render_scroll)
 
-            #enemy projectiles
-            for projectile in self.projectiles.copy():
-                projectile[0][0] += projectile[1]#[[x, y], direction, timer]
-                projectile[2] += 1
-                img = self.assets['projectile']
-                pos_x = projectile[0][0] - img.get_width() / 2 - render_scroll[0]
-                pos_y = projectile[0][1] - img.get_height() / 2 - render_scroll[1]
-                self.display.blit(img, (pos_x, pos_y))
-                if self.tilemap.solid_check(projectile[0]):
-                    self.projectiles.remove(projectile)
-                elif projectile[2] > 360:
-                    self.projectiles.remove(projectile)
-                elif abs(self.player.dashing) < 50:
-                    if self.player.rect().collidepoint(projectile[0]):
-                        self.projectiles.remove(projectile)
-
-
-            #manage particles
-            for particle in self.particles.copy():
-                kill = particle.update()
-                particle.render(self.display, offset=render_scroll)
-                if particle.p_type == 'leaf':
-                    #apply sin effect to position               0.035 slows down effect
-                    particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
-                if kill:
-                    self.particles.remove(particle)
+            #enemy projectile calls
+            manage_enemy_projectiles()
+            
+            #leaf particles calls
+            manage_leaf_particles()
                 
             #input
             self.keyboard_input()
