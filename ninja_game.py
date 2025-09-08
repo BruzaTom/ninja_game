@@ -67,6 +67,7 @@ class Game:
         for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
                 self.player.pos = spawner['pos']
+                self.player.air_time = 0#prevents falling to death from multiple triggers
             else:
                 self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
         
@@ -76,6 +77,9 @@ class Game:
 
         #'camera' scroll
         self.scroll = [0, 0]
+        
+        #death
+        self.dead = 0
 
     def run(self):
         while True:
@@ -128,6 +132,7 @@ class Game:
                     elif abs(self.player.dashing) < 50:
                         if self.player.rect().collidepoint(projectile[0]):#projectile hit player
                             self.projectiles.remove(projectile)
+                            self.dead += 1#start death timer
                             for i in range(30):#burst effect of sparks and particles
                                 #add sparks
                                 spark_pos = self.player.rect().center
@@ -142,6 +147,13 @@ class Game:
                                 particle_velocity = [velocity_x, velocity_y]
                                 new_particle = Particle(self, 'particle', pos, velocity=particle_velocity, frame=random.randint(0, 7))
                                 self.particles.append(new_particle)
+
+            #death logic
+            def manage_death():
+                if self.dead:
+                    self.dead += 1
+                    if self.dead > 40:
+                        self.load_level(0)
 
             #sparks from projectiles logic
             def manage_projectile_sparks():
@@ -163,6 +175,9 @@ class Game:
             #backgrond img
             self.display.blit(self.assets['background'], (0, 0))
 
+            #death check
+            manage_death()
+
             #clouds behind tilemap
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)
@@ -172,8 +187,9 @@ class Game:
             manage_enemies()
 
             #player calls
-            self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
-            self.player.render(self.display, offset=render_scroll)
+            if not self.dead:
+                self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))
+                self.player.render(self.display, offset=render_scroll)
 
             #enemy projectile calls
             manage_enemy_projectiles()

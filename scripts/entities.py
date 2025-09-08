@@ -127,8 +127,6 @@ class Enemy(PhysicsEntity):
                             spark_speed = 2 + random.random()
                             new_spark = Spark(spark_pos, spark_angle, spark_speed)
                             self.game.sparks.append(new_spark)
-
-
         elif random.random() < 0.01:#ocasionally walk for 30 to 120 secs
             self.walking = random.randint(30, 120)
 
@@ -186,11 +184,22 @@ class Player(PhysicsEntity):
         self.jumps = 1
         self.wall_slide = False
         self.dashing = 0
+        self.lost_timer = 0
 
     def update(self, tilemap, movement=(0, 0)):
         super().update(tilemap, movement=movement)
             
         self.air_time += 1
+
+        #check if player is lost
+        lost = not (self.collisions['up'] or self.collisions['down'] or self.collisions['right'] or self.collisions['left'])
+        if lost:
+            self.lost_timer += 1
+        else:
+            self.lost_timer = 0
+        if self.lost_timer > 120:#falling off map
+            self.game.dead += 1
+
         if self.collisions['down']:
             self.air_time = 0
             self.jumps = 1
