@@ -1,5 +1,6 @@
 import pygame, math, random
 from scripts.particle import Particle
+from scripts.spark import Spark
 
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
@@ -109,9 +110,23 @@ class Enemy(PhysicsEntity):
                     if (self.flip and dis_x < 0):#looking left and player is to the left
                         projectile_pos = [self.rect().centerx - 7, self.rect().centery]
                         self.game.projectiles.append([projectile_pos, -1.5, 0])
+                        #add parks
+                        for i in range(4):
+                            spark_pos = self.game.projectiles[-1][0]
+                            spark_angle = random.random() - 0.5 + math.pi#left
+                            spark_speed = 2 + random.random()
+                            new_spark = Spark(spark_pos, spark_angle, spark_speed)
+                            self.game.sparks.append(new_spark)
                     if (not self.flip and dis_x > 0):#looking right and player is to the right
                         projectile_pos = [self.rect().centerx + 7, self.rect().centery]
                         self.game.projectiles.append([projectile_pos, 1.5, 0])
+                        #add parks
+                        for i in range(4):
+                            spark_pos = self.game.projectiles[-1][0]
+                            spark_angle = random.random() - 0.5#right
+                            spark_speed = 2 + random.random()
+                            new_spark = Spark(spark_pos, spark_angle, spark_speed)
+                            self.game.sparks.append(new_spark)
 
 
         elif random.random() < 0.01:#ocasionally walk for 30 to 120 secs

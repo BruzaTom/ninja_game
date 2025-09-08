@@ -36,10 +36,10 @@ class TileMap:
 
         # the tiles will be saved as strings of dictionary values
 
-    #extracts tiles specified in id_pairs variable
+    #extracts tiles offgrid only
     def extract(self, id_pairs, keep=False):
         matches = []
-        for tile in self.offgrid_tiles.copy():
+        for tile in self.offgrid_tiles.copy():#
             if (tile['type'], tile['variant']) in id_pairs:
                 matches.append(tile.copy())
                 if not keep:
