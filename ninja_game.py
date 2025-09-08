@@ -97,6 +97,14 @@ class Game:
                     if kill:
                         self.particles.remove(particle)
 
+            #enemy logic
+            def manage_enemies():
+                for enemy in self.enemies.copy():
+                    kill = enemy.update(self.tilemap, (0, 0))
+                    enemy.render(self.display, offset=render_scroll)
+                    if kill:
+                        self.enemies.remove(enemy)
+
             #enemy projectile logic
             def manage_enemy_projectiles():
                 for projectile in self.projectiles.copy():
@@ -161,9 +169,7 @@ class Game:
             self.tilemap.render(self.display, offset=render_scroll)
 
             #enemy calls
-            for enemy in self.enemies.copy():
-                enemy.update(self.tilemap, (0, 0))
-                enemy.render(self.display, offset=render_scroll)
+            manage_enemies()
 
             #player calls
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))

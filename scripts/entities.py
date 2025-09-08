@@ -139,6 +139,29 @@ class Enemy(PhysicsEntity):
         else:
             self.set_action('idle')
 
+        #killed by dash
+        if abs(self.game.player.dashing) >= 50:#if player is dashing
+            if self.rect().colliderect(self.game.player.rect()):#and player rect collides
+                for i in range(30):#burst effect of sparks and particles
+                    #add sparks
+                    spark_pos = self.game.player.rect().center
+                    spark_angle = random.random() * math.pi * 2
+                    spark_speed = random.random() * 5
+                    new_spark = Spark(spark_pos, spark_angle, spark_speed)
+                    self.game.sparks.append(new_spark)
+                    #add particles
+                    pos = self.game.player.rect().center
+                    velocity_x = math.cos(spark_angle + math.pi) * spark_speed * 0.5
+                    velocity_y = math.sin(spark_angle + math.pi) * spark_speed * 0.5
+                    particle_velocity = [velocity_x, velocity_y]
+                    new_particle = Particle(self.game, 'particle', pos, velocity=particle_velocity, frame=random.randint(0, 7))
+                    self.game.particles.append(new_particle)
+                #2 big sparks from sides of enemy
+                self.game.sparks.append(Spark(self.rect().center, 0, 5 + random.random()))#left
+                self.game.sparks.append(Spark(self.rect().center, math.pi, 5 + random.random()))#right
+                #value for kill
+                return True
+
     def render(self, surface, offset=(0, 0)):
         super().render(surface, offset=offset)
         
