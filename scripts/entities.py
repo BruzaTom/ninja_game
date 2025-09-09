@@ -140,6 +140,8 @@ class Enemy(PhysicsEntity):
         #killed by dash
         if abs(self.game.player.dashing) >= 50:#if player is dashing
             if self.rect().colliderect(self.game.player.rect()):#and player rect collides
+                #screenshake
+                self.game.screenshake = max(16, self.game.screenshake)
                 for i in range(30):#burst effect of sparks and particles
                     #add sparks
                     spark_pos = self.game.player.rect().center
@@ -199,6 +201,7 @@ class Player(PhysicsEntity):
             self.lost_timer = 0
         if self.lost_timer > 120:#falling off map
             self.game.dead += 1
+            self.game.screenshake = max(16, self.game.screenshake)
 
         if self.collisions['down']:
             self.air_time = 0

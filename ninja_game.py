@@ -71,15 +71,17 @@ class Game:
             else:
                 self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
         
+        #empty containers
         self.projectiles = []
         self.particles = []
         self.sparks = []
 
         #'camera' scroll
         self.scroll = [0, 0]
-        
         #death
         self.dead = 0
+        #screen-shake effect
+        self.screenshake = 0
 
     def run(self):
         while True:
@@ -133,6 +135,8 @@ class Game:
                         if self.player.rect().collidepoint(projectile[0]):#projectile hit player
                             self.projectiles.remove(projectile)
                             self.dead += 1#start death timer
+                            #screenshake
+                            self.screenshake = max(16, self.screenshake)
                             for i in range(30):#burst effect of sparks and particles
                                 #add sparks
                                 spark_pos = self.player.rect().center
@@ -163,14 +167,20 @@ class Game:
                     if kill:
                         self.sparks.remove(spark)
 
+            #screenshake logic
+            self.screenshake = max(0, self.screenshake - 1)
+            def manage_screenshake():
+                mod = (random.random() * self.screenshake) - (self.screenshake / 2)
+                return (mod, mod)
+
             #render scroll logic
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
             #convert to int to avoid jitters
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            #################logic######################
-            #################render######################
+            #--------------------logic------------------------
+            #-------------------render------------------------
             
             #backgrond img
             self.display.blit(self.assets['background'], (0, 0))
@@ -204,7 +214,8 @@ class Game:
             self.keyboard_input()
                 
             #finishers
-            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
+            screenshake_offset = manage_screenshake()
+            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
             pygame.display.update()
             self.clock.tick(60)
 
