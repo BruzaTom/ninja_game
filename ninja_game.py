@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import random#partickles
 import math#particles
 import pygame
@@ -51,7 +51,13 @@ class Game:
 
         #pass in assets to TileMap using self as the game
         self.tilemap = TileMap(self, tile_size=16)
-        self.load_level(0)
+
+        #start levels
+        self.level = 0
+        self.load_level(self.level)
+
+        #screen-shake effect
+        self.screenshake = 0
 
     #level loader
     def load_level(self, map_id):
@@ -80,11 +86,28 @@ class Game:
         self.scroll = [0, 0]
         #death
         self.dead = 0
-        #screen-shake effect
-        self.screenshake = 0
+        #transition
+        self.transition = -30
 
     def run(self):
         while True:
+            #level transition logic
+            if not len(self.enemies):#if no more enemies
+                self.transition += 1
+                if self.transition > 30:
+                    self.level = min(self.level + 1, len(os.listdir('data/maps')) - 1)
+                    self.load_level(self.level)
+            if self.transition < 0:
+                self.transition += 1
+            def manage_transition():
+                if self.transition:
+                    transition_surface = pygame.Surface(self.display.get_size())
+                    radius = (30 - abs(self.transition)) * 8
+                    x_y = (self.display.get_width() // 2, self.display.get_height() // 2)
+                    pygame.draw.circle(transition_surface, (255, 255, 255), x_y, radius)
+                    transition_surface.set_colorkey((255, 255, 255))
+                    self.display.blit(transition_surface, (0, 0))
+
             #leaf particle logic
             for rect in self.leaf_spawners:
                 #49999 makes the particals pass condition less often
@@ -156,8 +179,10 @@ class Game:
             def manage_death():
                 if self.dead:
                     self.dead += 1
+                    if self.dead >= 10:#ensure positive transition is rendered
+                        self.transition = min(30, self.transition + 1)#without triggering next level
                     if self.dead > 40:
-                        self.load_level(0)
+                        self.load_level(self.level)
 
             #sparks from projectiles logic
             def manage_projectile_sparks():
@@ -214,6 +239,7 @@ class Game:
             self.keyboard_input()
                 
             #finishers
+            manage_transition()
             screenshake_offset = manage_screenshake()
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
             pygame.display.update()
