@@ -16,8 +16,9 @@ class Game:
         pygame.display.set_caption('ninja game')
         #game screen
         self.screen = pygame.display.set_mode((640, 480))
-        #render size 'zoom' / 'camera'
-        self.display = pygame.Surface((320, 240))
+        #render size 'zoom' / 'camera' - both displays will merge seperating outlined from normal
+        self.display = pygame.Surface((320, 240), pygame.SRCALPHA)#objects withoutline
+        self.display_2 = pygame.Surface((320, 240))#objects without outline
         #
         self.clock = pygame.time.Clock()
         #movement x y
@@ -89,133 +90,150 @@ class Game:
         #transition
         self.transition = -30
 
+    #game logic
+    def logic(self):
+            #--------------------logic------------------------
+        #level transition logic
+        if not len(self.enemies):#if no more enemies
+            self.transition += 1
+            if self.transition > 30:
+                self.level = min(self.level + 1, len(os.listdir('data/maps')) - 1)
+                self.load_level(self.level)
+        if self.transition < 0:
+            self.transition += 1
+        
+
+        #leaf particle logic
+        for rect in self.leaf_spawners:
+            #49999 makes the particals pass condition less often
+            if random.random() * 49999 < rect.width * rect.height:
+                pos_x = rect.x + random.random() * rect.width
+                pos_y = rect.y + random.random() * rect.height
+                pos = (pos_x, pos_y)
+                self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
+        
+        #screenshake logic
+        self.screenshake = max(0, self.screenshake - 1) 
+
+        #render scroll logic
+        self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
+        self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
+        #convert to int to avoid jitters
+        render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+        return render_scroll
+    
     def run(self):
-        while True:
-            #level transition logic
-            if not len(self.enemies):#if no more enemies
-                self.transition += 1
-                if self.transition > 30:
-                    self.level = min(self.level + 1, len(os.listdir('data/maps')) - 1)
-                    self.load_level(self.level)
-            if self.transition < 0:
-                self.transition += 1
-            def manage_transition():
-                if self.transition:
-                    transition_surface = pygame.Surface(self.display.get_size())
-                    radius = (30 - abs(self.transition)) * 8
-                    x_y = (self.display.get_width() // 2, self.display.get_height() // 2)
-                    pygame.draw.circle(transition_surface, (255, 255, 255), x_y, radius)
-                    transition_surface.set_colorkey((255, 255, 255))
-                    self.display.blit(transition_surface, (0, 0))
+        #funcs
+        def manage_transition():
+            if self.transition:
+                transition_surface = pygame.Surface(self.display.get_size())
+                radius = (30 - abs(self.transition)) * 8
+                x_y = (self.display.get_width() // 2, self.display.get_height() // 2)
+                pygame.draw.circle(transition_surface, (255, 255, 255), x_y, radius)
+                transition_surface.set_colorkey((255, 255, 255))
+                self.display.blit(transition_surface, (0, 0))
 
-            #leaf particle logic
-            for rect in self.leaf_spawners:
-                #49999 makes the particals pass condition less often
-                if random.random() * 49999 < rect.width * rect.height:
-                    pos_x = rect.x + random.random() * rect.width
-                    pos_y = rect.y + random.random() * rect.height
-                    pos = (pos_x, pos_y)
-                    self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
-            def manage_leaf_particles():
-                for particle in self.particles.copy():
-                    kill = particle.update()
-                    particle.render(self.display, offset=render_scroll)
-                    if particle.p_type == 'leaf':
-                        #apply sin effect to position               0.035 slows down effect
-                        particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
-                    if kill:
-                        self.particles.remove(particle)
+        def manage_particles():
+            for particle in self.particles.copy():
+                kill = particle.update()
+                particle.render(self.display, offset=render_scroll)
+                if particle.p_type == 'leaf':
+                    #apply sin effect to position               0.035 slows down effect
+                    particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
+                if kill:
+                    self.particles.remove(particle)
 
-            #enemy logic
-            def manage_enemies():
-                for enemy in self.enemies.copy():
-                    kill = enemy.update(self.tilemap, (0, 0))
-                    enemy.render(self.display, offset=render_scroll)
-                    if kill:
-                        self.enemies.remove(enemy)
+        #enemy logic
+        def manage_enemies():
+            for enemy in self.enemies.copy():
+                kill = enemy.update(self.tilemap, (0, 0))
+                enemy.render(self.display, offset=render_scroll)
+                if kill:
+                    self.enemies.remove(enemy)
 
-            #enemy projectile logic
-            def manage_enemy_projectiles():
-                for projectile in self.projectiles.copy():
-                    projectile[0][0] += projectile[1]#[[x, y], direction, timer]
-                    projectile[2] += 1
-                    img = self.assets['projectile']
-                    pos_x = projectile[0][0] - img.get_width() / 2 - render_scroll[0]
-                    pos_y = projectile[0][1] - img.get_height() / 2 - render_scroll[1]
-                    self.display.blit(img, (pos_x, pos_y))
-                    if self.tilemap.solid_check(projectile[0]):#projectile hit wall
+        #enemy projectile logic
+        def manage_enemy_projectiles():
+            for projectile in self.projectiles.copy():
+                projectile[0][0] += projectile[1]#[[x, y], direction, timer]
+                projectile[2] += 1
+                img = self.assets['projectile']
+                pos_x = projectile[0][0] - img.get_width() / 2 - render_scroll[0]
+                pos_y = projectile[0][1] - img.get_height() / 2 - render_scroll[1]
+                self.display.blit(img, (pos_x, pos_y))
+                if self.tilemap.solid_check(projectile[0]):#projectile hit wall
+                    self.projectiles.remove(projectile)
+                    #add parks
+                    for i in range(4):
+                        spark_pos = projectile[0]
+                        spark_angle = random.random() - 0.5 + (math.pi if projectile[1] > 0 else 0)#bounce off walls
+                        spark_speed = 2 + random.random()
+                        new_spark = Spark(spark_pos, spark_angle, spark_speed)
+                        self.sparks.append(new_spark)
+                elif projectile[2] > 360:
+                    self.projectiles.remove(projectile)
+                elif abs(self.player.dashing) < 50:
+                    if self.player.rect().collidepoint(projectile[0]):#projectile hit player
                         self.projectiles.remove(projectile)
-                        #add parks
-                        for i in range(4):
-                            spark_pos = projectile[0]
-                            spark_angle = random.random() - 0.5 + (math.pi if projectile[1] > 0 else 0)#bounce off walls
-                            spark_speed = 2 + random.random()
+                        self.dead += 1#start death timer
+                        #screenshake
+                        self.screenshake = max(16, self.screenshake)
+                        for i in range(30):#burst effect of sparks and particles
+                            #add sparks
+                            spark_pos = self.player.rect().center
+                            spark_angle = random.random() * math.pi * 2
+                            spark_speed = random.random() * 5
                             new_spark = Spark(spark_pos, spark_angle, spark_speed)
                             self.sparks.append(new_spark)
-                    elif projectile[2] > 360:
-                        self.projectiles.remove(projectile)
-                    elif abs(self.player.dashing) < 50:
-                        if self.player.rect().collidepoint(projectile[0]):#projectile hit player
-                            self.projectiles.remove(projectile)
-                            self.dead += 1#start death timer
-                            #screenshake
-                            self.screenshake = max(16, self.screenshake)
-                            for i in range(30):#burst effect of sparks and particles
-                                #add sparks
-                                spark_pos = self.player.rect().center
-                                spark_angle = random.random() * math.pi * 2
-                                spark_speed = random.random() * 5
-                                new_spark = Spark(spark_pos, spark_angle, spark_speed)
-                                self.sparks.append(new_spark)
-                                #add particles
-                                pos = self.player.rect().center
-                                velocity_x = math.cos(spark_angle + math.pi) * spark_speed * 0.5
-                                velocity_y = math.sin(spark_angle + math.pi) * spark_speed * 0.5
-                                particle_velocity = [velocity_x, velocity_y]
-                                new_particle = Particle(self, 'particle', pos, velocity=particle_velocity, frame=random.randint(0, 7))
-                                self.particles.append(new_particle)
+                            #add particles
+                            pos = self.player.rect().center
+                            velocity_x = math.cos(spark_angle + math.pi) * spark_speed * 0.5
+                            velocity_y = math.sin(spark_angle + math.pi) * spark_speed * 0.5
+                            particle_velocity = [velocity_x, velocity_y]
+                            new_particle = Particle(self, 'particle', pos, velocity=particle_velocity, frame=random.randint(0, 7))
+                            self.particles.append(new_particle)
 
-            #death logic
-            def manage_death():
-                if self.dead:
-                    self.dead += 1
-                    if self.dead >= 10:#ensure positive transition is rendered
-                        self.transition = min(30, self.transition + 1)#without triggering next level
-                    if self.dead > 40:
-                        self.load_level(self.level)
+        #death logic
+        def manage_death():
+            if self.dead:
+                self.dead += 1
+                if self.dead >= 10:#ensure positive transition is rendered
+                    self.transition = min(30, self.transition + 1)#without triggering next level
+                if self.dead > 40:
+                    self.load_level(self.level)
 
-            #sparks from projectiles logic
-            def manage_projectile_sparks():
-                for spark in self.sparks.copy():
-                    kill = spark.update()
-                    spark.render(self.display, offset=render_scroll)
-                    if kill:
-                        self.sparks.remove(spark)
+        #sparks from projectiles logic
+        def manage_projectile_sparks():
+            for spark in self.sparks.copy():
+                kill = spark.update()
+                spark.render(self.display, offset=render_scroll)
+                if kill:
+                    self.sparks.remove(spark)
 
-            #screenshake logic
-            self.screenshake = max(0, self.screenshake - 1)
-            def manage_screenshake():
+        def manage_screenshake():
                 mod = (random.random() * self.screenshake) - (self.screenshake / 2)
                 return (mod, mod)
 
-            #render scroll logic
-            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
-            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
-            #convert to int to avoid jitters
-            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+        def manage_mask():#wont effect renders called after
+            display_mask = pygame.mask.from_surface(self.display)#mask for respective renders
+            display_sillouette = display_mask.to_surface(setcolor=(0, 0, 0, 180), unsetcolor=(0, 0, 0, 0))#make less transparent
+            for offset in [(-1, 0), (1, 0), (0, -1), (0, 1)]:#cast sillouette on all sides
+                self.display_2.blit(display_sillouette, offset)
 
-            #--------------------logic------------------------
-            #-------------------render------------------------
+            #-------------------gameloop------------------------
+
+        while True:
+            render_scroll = self.logic()
             
+            self.display.fill((0, 0, 0, 0))#fill forground with black transparant for mask
             #backgrond img
-            self.display.blit(self.assets['background'], (0, 0))
+            self.display_2.blit(self.assets['background'], (0, 0))
 
             #death check
             manage_death()
 
             #clouds behind tilemap
             self.clouds.update()
-            self.clouds.render(self.display, offset=render_scroll)
+            self.clouds.render(self.display_2, offset=render_scroll)
             self.tilemap.render(self.display, offset=render_scroll)
 
             #enemy calls
@@ -231,17 +249,23 @@ class Game:
 
             #spark from projectiles calls
             manage_projectile_sparks()
+
+            #manage sillouette before particles
+            manage_mask()
             
             #leaf particles calls
-            manage_leaf_particles()
+            manage_particles()
                 
             #input
             self.keyboard_input()
                 
-            #finishers
+            #manage transition
             manage_transition()
+
+            #display
+            self.display_2.blit(self.display, (0, 0))#draw game back on top / "merge displays"
             screenshake_offset = manage_screenshake()
-            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
+            self.screen.blit(pygame.transform.scale(self.display_2, self.screen.get_size()), screenshake_offset)#render displays
             pygame.display.update()
             self.clock.tick(60)
 
@@ -267,7 +291,9 @@ class Game:
 
 Game().run()
 
-
+#
+#
+#
 
 def controller_input():
     #d-pad
