@@ -108,6 +108,7 @@ class Enemy(PhysicsEntity):
                 distance = (dis_x, dis_y)
                 if (abs(dis_y) < 16):
                     if (self.flip and dis_x < 0):#looking left and player is to the left
+                        self.game.sfx['shoot'].play(0)
                         projectile_pos = [self.rect().centerx - 7, self.rect().centery]
                         self.game.projectiles.append([projectile_pos, -1.5, 0])
                         #add parks
@@ -118,6 +119,7 @@ class Enemy(PhysicsEntity):
                             new_spark = Spark(spark_pos, spark_angle, spark_speed)
                             self.game.sparks.append(new_spark)
                     if (not self.flip and dis_x > 0):#looking right and player is to the right
+                        self.game.sfx['shoot'].play(0)
                         projectile_pos = [self.rect().centerx + 7, self.rect().centery]
                         self.game.projectiles.append([projectile_pos, 1.5, 0])
                         #add parks
@@ -140,6 +142,7 @@ class Enemy(PhysicsEntity):
         #killed by dash
         if abs(self.game.player.dashing) >= 50:#if player is dashing
             if self.rect().colliderect(self.game.player.rect()):#and player rect collides
+                self.game.sfx['hit'].play(0)
                 #screenshake
                 self.game.screenshake = max(16, self.game.screenshake)
                 for i in range(30):#burst effect of sparks and particles
@@ -297,3 +300,4 @@ class Player(PhysicsEntity):
                 self.dashing = -60
             else:
                 self.dashing = 60
+            return True

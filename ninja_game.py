@@ -15,7 +15,7 @@ class Game:
 
         pygame.display.set_caption('ninja game')
         #game screen
-        self.screen = pygame.display.set_mode((640, 480))
+        self.screen = pygame.display.set_mode((800, 600))
         #render size 'zoom' / 'camera' - both displays will merge seperating outlined from normal
         self.display = pygame.Surface((320, 240), pygame.SRCALPHA)#objects withoutline
         self.display_2 = pygame.Surface((320, 240))#objects without outline
@@ -45,6 +45,21 @@ class Game:
                 'gun': load_image('gun.png'),
                 'projectile': load_image('projectile.png'),
                 }
+
+        #sound effects
+        self.sfx = {
+                'jump': pygame.mixer.Sound('data/sfx/jump.wav'),
+                'dash': pygame.mixer.Sound('data/sfx/dash.wav'),
+                'hit': pygame.mixer.Sound('data/sfx/hit.wav'),
+                'shoot': pygame.mixer.Sound('data/sfx/shoot.wav'),
+                'ambience': pygame.mixer.Sound('data/sfx/ambience.wav'),
+                }
+
+        self.sfx['ambience'].set_volume(0.2)
+        self.sfx['shoot'].set_volume(0.4)
+        self.sfx['hit'].set_volume(0.8)
+        self.sfx['dash'].set_volume(0.3)
+        self.sfx['jump'].set_volume(0.7)
 
         self.clouds = Clouds(self.assets['clouds'], count=16)
         #from scripts/entities.py
@@ -175,6 +190,7 @@ class Game:
                     if self.player.rect().collidepoint(projectile[0]):#projectile hit player
                         self.projectiles.remove(projectile)
                         self.dead += 1#start death timer
+                        self.sfx['hit'].play(0)
                         #screenshake
                         self.screenshake = max(16, self.screenshake)
                         for i in range(30):#burst effect of sparks and particles
@@ -218,6 +234,14 @@ class Game:
             display_sillouette = display_mask.to_surface(setcolor=(0, 0, 0, 180), unsetcolor=(0, 0, 0, 0))#make less transparent
             for offset in [(-1, 0), (1, 0), (0, -1), (0, 1)]:#cast sillouette on all sides
                 self.display_2.blit(display_sillouette, offset)
+        
+        #bg music
+        pygame.mixer.music.load('data/music.wav')
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)#0, 1, -1
+        #bg sfx
+        self.sfx['ambience'].play(-1)
+
 
             #-------------------gameloop------------------------
 
@@ -280,9 +304,11 @@ class Game:
                 if event.key == pygame.K_RIGHT:
                     self.movement[1] = True
                 if event.key == pygame.K_UP:
-                    self.player.jump()
+                    if self.player.jump():
+                        self.sfx['jump'].play(0)
                 if event.key == pygame.K_x:
-                    self.player.dash()
+                    if self.player.dash():
+                        self.sfx['dash'].play(0)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     self.movement[0] = False
